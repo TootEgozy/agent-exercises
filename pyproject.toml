@@ -1,0 +1,17 @@
+[project]
+name = "agent-exercises"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.109.1",
+    "gradio>=6.18.0",
+    "ipython>=9.14.1",
+    "ollama>=0.6.2",
+    "openai>=2.41.1",
+    "openai-agents>=0.17.5",
+    "pypdf>=6.13.2",
+    "python-dotenv>=1.2.2",
+    "requests>=2.34.2",
+]
