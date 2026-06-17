@@ -1,3 +1,4 @@
+from pathlib import Path
 from rich.console import Console
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -5,7 +6,7 @@ from anthropic import Anthropic
 import json
 
 load_dotenv(override=True)
-
+root = Path(__file__).resolve().parent
 todos = []
 completed = []
 openai = OpenAI()
@@ -114,9 +115,33 @@ def loop(messages):
             done = True
     show(response.choices[0].message.content)
 
+def handle_questions_cache(summary):
+    global root
+    with open(root / "data" / "todo.json", "r") as file:
+        cache = json.load(file)
+    if cache["count"] > 10:
+        cache["prev_questions"] = []
+        cache["count"] = 0
+    else:
+        cache["prev_questions"].append(summary)
+        cache["count"] += 1
+    with open(root / "data" / "todo.json", "w") as file:
+        json.dump(cache, file, indent=4)
+
+
+
 def get_question():
-    response = claude.messages.create(model="claude-sonnet-4-5", messages = [{"role": "user", "content": "Provide a riddle, a logical or a mathematical question to solve. Reply with just the question in simple text, no additions."}], max_tokens=1000)
+    global root
+    prev_questions = []
+    with open(root / "data" / "todo.json", "r") as file:
+        cache = json.load(file)
+        prev_questions = cache["prev_questions"]
+        summary_message = [{"role": "user", "content": f"Provide a riddle, a logical or a mathematical question to solve. Reply with just the question in simple text, no additions. avoid repeating these riddles (summarised): {prev_questions}"}]
+    response = claude.messages.create(model="claude-sonnet-4-5", messages = summary_message, max_tokens=1000)
     question = response.content[0].text
+    summary = openai.chat.completions.create(model='gpt-5.2', messages=[{"role": "user", "content": f"Your task is to summarize and shorten a question or a riddle for caching purposes. reply only with the summary in plain text. the question: {question}"}], 
+    reasoning_effort="none")
+    handle_questions_cache(summary.choices[0].message.content)
     show(f"[blue]{question}[/blue]\n")
     return question
 
